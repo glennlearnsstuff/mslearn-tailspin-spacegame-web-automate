@@ -77,7 +77,7 @@ stages:
     - group: Release
     steps:
       name: 'RunTerraform'
-      displayName: 'Run 'RunTerraform'
+      displayName: 'Run RunTerraform'
       env:
         ARM_CLIENT_ID: $(ARM_CLIENT_ID)
         ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
