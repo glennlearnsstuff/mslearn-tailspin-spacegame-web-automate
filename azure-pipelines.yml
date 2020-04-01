@@ -76,17 +76,10 @@ stages:
     variables:
     - group: Release
     steps:
-      name: 'RunTerraform'
-      displayName: 'Run RunTerraform'
-      env:
-        ARM_CLIENT_ID: $(ARM_CLIENT_ID)
-        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
-        ARM_TENANT_ID: $(ARM_TENANT_ID)
-        ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
     - script: |
       # Exit if any command returns a failure:
       set -e
-      
+
       # Write terraform.tfvars variables file.
       echo 'resource_group_location = "$(ResourceGroupLocation)"' | tee terraform.tfvars
 
@@ -107,6 +100,13 @@ stages:
 
       # Write the WebAppNameDev variable to the pipeline.
       echo "##vso[task.setvariable variable=WebAppNameDev;isOutput=true]$WebAppNameDev"
+    name: 'RunTerraform'
+    displayName: 'Run RunTerraform'
+    env:
+      ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+      ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+      ARM_TENANT_ID: $(ARM_TENANT_ID)
+      ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
   - deployment: Deploy
     dependsOn: Provision
     variables:  
