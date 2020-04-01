@@ -72,35 +72,39 @@ stages:
   - job: Provision
     displayName: 'Provision Azure App Service'
     pool:
-      vmImage: 'unbuntu-16.04'
+      vmImage: 'ubuntu-16.04'
     variables:
     - group: Release
     steps:
     - script: |
-      # Exit if any command returns a failure.
-      set -e
-      # Write terraform.tfvars variables file.
-      echo 'resource_group_location = "$(ResourceGroupLocation)"' | tee terraform.tfvars
-      # Write backend.tfvars state file.
-      echo 'resource_group_name = "tf-storage-rg"' | tee backend.tfvars
-      echo 'storage_account_name = "$(StorageAccountName)"' | tee -a backend.tfvars
-      echo 'container_name = "tfstate"' | tee -a backend.tfvars
-      echo 'key = "terraform.tfstate"' | tee -a backend.tfvars
-      # Init Terraform.
-      terraform init -input=false -backend-config="backend.tfvars"
-      # Apply the Terraform plan.
-      terraform apply -input=false -auto-approve
-      # Get the App Service Name out of the terraform output.
-      WebAppNameDev=$(terraform output appservice_name_dev)
-      # Write the WebAppNameDev variable to the pipeline.
-      echo "##vso[task.setvariable variable=WebAppNameDev;isOutput=true]$WebAppNameDev"
-    name: 'RunTerraform'
-    displayName: 'Run RunTerraform'
-    env:
-      ARM_CLIENT_ID: $(ARM_CLIENT_ID)
-      ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
-      ARM_TENANT_ID: $(ARM_TENANT_ID)
-      ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+        # Exit when any command returns a failure status.
+        set -e
+
+        # Write terraform.tfvars.
+        echo 'resource_group_location = "'$(ResourceGroupLocation)'"' | tee terraform.tfvars
+        # Write backend.tfvars.
+        echo 'resource_group_name = "tf-storage-rg"' | tee backend.tfvars
+        echo 'storage_account_name = "'$(StorageAccountName)'"' | tee -a backend.tfvars
+        echo 'container_name = "tfstate"' | tee -a backend.tfvars
+        echo 'key = "terraform.tfstate"' | tee -a backend.tfvars
+
+        # Initialize Terraform.
+        terraform init -input=false -backend-config="backend.tfvars"
+        # Apply the Terraform plan.
+        terraform apply -input=false -auto-approve
+
+        # Get the App Service name for the dev environment.
+        WebAppNameDev=$(terraform output appservice_name_dev)
+
+        # Write the WebAppNameDev variable to the pipeline.
+        echo "##vso[task.setvariable variable=WebAppNameDev;isOutput=true]$WebAppNameDev"
+      name: 'RunTerraform'
+      displayName: 'Run Terraform'
+      env:
+        ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+        ARM_TENANT_ID: $(ARM_TENANT_ID)
+        ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
   - deployment: Deploy
     dependsOn: Provision
     variables:  
@@ -119,4 +123,5 @@ stages:
             inputs:
               azureSubscription: 'Resource Manager - Tailspin - Space Game'
               appName: '$(WebAppNameDev)'
+              appType: webAppLinux
               package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
